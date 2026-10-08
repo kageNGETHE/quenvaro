@@ -1,5 +1,8 @@
+import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
+import { authOptions } from "@/lib/auth-options";
+import { ArrowRight, Bell, BrainCircuit, CalendarCheck2, CreditCard, TrendingUp } from "lucide-react";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Bell, BrainCircuit, CalendarCheck2, CreditCard, TrendingUp } from "lucide-react";
 
 const cards = [
   { icon: CreditCard, label: "Spending overview", value: "$3,480", detail: "Across 12 categories" },
@@ -13,7 +16,13 @@ const messages = [
   { role: "assistant", text: "Your deduction trend is strong. Keep records for business mileage and home office costs." },
 ];
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const session = await getServerSession(authOptions);
+
+  if (!session) {
+    redirect("/login");
+  }
+
   return (
     <main className="bg-[#eef3f6] p-6 text-[#1b1f2a] md:p-10">
       <div className="mx-auto max-w-7xl">
@@ -71,7 +80,14 @@ export default function DashboardPage() {
 
               <div className="mt-6 space-y-4">
                 {messages.map((msg) => (
-                  <div key={msg.text} className={msg.role === "assistant" ? "max-w-[90%] rounded-2xl bg-white/10 p-4 text-sm text-[#ebf5ff]" : "ml-auto max-w-[80%] rounded-2xl bg-[#eaf5ff] p-4 text-sm text-[#1d2e42]"}>
+                  <div
+                    key={msg.text}
+                    className={
+                      msg.role === "assistant"
+                        ? "max-w-[90%] rounded-2xl bg-white/10 p-4 text-sm text-[#ebf5ff]"
+                        : "ml-auto max-w-[80%] rounded-2xl bg-[#eaf5ff] p-4 text-sm text-[#1d2e42]"
+                    }
+                  >
                     {msg.text}
                   </div>
                 ))}
@@ -82,7 +98,7 @@ export default function DashboardPage() {
                   aria-label="Prompt"
                   value="Ask about spending, taxes, or cash flow"
                   readOnly
-                  className="w-full bg-transparent text-sm text-[#dfeeff] placeholder:text-[#b3c9df] outline-none"
+                  className="w-full bg-transparent text-sm text-[#dfeeff] outline-none placeholder:text-[#b3c9df]"
                 />
                 <button className="rounded-full bg-[#9dcff7] px-4 py-2 text-sm font-semibold text-[#0d213a]">
                   Send
@@ -104,7 +120,10 @@ export default function DashboardPage() {
                   "Check tax deduction trends",
                   "Set a spending cap",
                 ].map((action) => (
-                  <button key={action} className="flex w-full items-center justify-between rounded-2xl bg-[#f3f8fb] px-4 py-3 text-left text-sm font-medium text-[#233447]">
+                  <button
+                    key={action}
+                    className="flex w-full items-center justify-between rounded-2xl bg-[#f3f8fb] px-4 py-3 text-left text-sm font-medium text-[#233447]"
+                  >
                     <span>{action}</span>
                     <ArrowRight size={16} />
                   </button>
