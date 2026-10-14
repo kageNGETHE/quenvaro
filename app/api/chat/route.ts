@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
+import { redactPII } from "@/lib/redact";
 
 type Body = {
   content?: string;
@@ -29,16 +30,34 @@ export async function POST(request: Request) {
   }
 
   try {
-    // save user message
+    // Redact PII before saving or forwarding
+    const { text: sanitizedContent, types } = redactPII(content);
+
+    if (types.length > 0) {
+      // Record an audit event noting that PII was redacted from user input
+      try {
+        await prisma.audit.create({
+          data: {
+            actor: session.user.email.toString().toLowerCase(),
+            action: "REDACT_INPUT",
+            details: JSON.stringify({ types, snippet: sanitizedContent.slice(0, 200) }),
+          },
+        });
+      } catch (auditErr) {
+        console.error("Failed to write redact audit:", auditErr);
+      }
+    }
+
+    // save user message (sanitized)
     const userMessage = await prisma.message.create({
       data: {
         userId: user.id,
         role: "user",
-        content,
+        content: sanitizedContent,
       },
     });
 
-    // prepare system prompt and recent messages (optional: fetch last N messages)
+    // prepare system prompt and recent messages
     const recent = await prisma.message.findMany({
       where: { userId: user.id },
       orderBy: { createdAt: "asc" },
@@ -52,7 +71,6 @@ export async function POST(request: Request) {
 
     const OPENAI_KEY = process.env.OPENAI_API_KEY;
     if (!OPENAI_KEY) {
-      // in dev without key, return a canned response
       const canned = "Thanks — I’ve saved your question. In a live system I would analyze spending categories and suggest a budget. (Set OPENAI_API_KEY to enable live responses.)";
 
       await prisma.message.create({
