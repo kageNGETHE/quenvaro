@@ -15,6 +15,19 @@ export async function POST(request: Request) {
       data: { deletedAt: new Date() },
     });
 
+    // write audit record for scheduling deletion
+    try {
+      await prisma.audit.create({
+        data: {
+          actor: session.user.email.toString().toLowerCase(),
+          action: "SCHEDULE_DELETE",
+          details: JSON.stringify({ userId: user.id }),
+        },
+      });
+    } catch (auditErr) {
+      console.error("Failed to write schedule-delete audit:", auditErr);
+    }
+
     return NextResponse.json({ ok: true, id: user.id });
   } catch (error) {
     console.error("Delete account error:", error);

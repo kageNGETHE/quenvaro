@@ -27,3 +27,11 @@ model Message {
   content   String
   createdAt DateTime @default(now())
 }
+
+model Audit {
+  id        String   @id @default(cuid())
+  actor     String
+  action    String
+  details   String?
+  createdAt DateTime @default(now())
+}
