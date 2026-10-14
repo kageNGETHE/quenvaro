@@ -4,7 +4,12 @@
 
 :root {
   --background: #f5f3ee;
-  --foreground: #171717;
+  --foreground: #0f1720; /* darker for better contrast */
+  --muted: #5d6b73;
+  --accent: #1b2940;
+  --accent-strong: #122033;
+  --success: #165c26;
+  --danger: #b91c1c;
 }
 
 html {
@@ -16,6 +21,8 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 * {
@@ -29,4 +36,58 @@ a {
 button,
 input {
   font: inherit;
+}
+
+/* Accessible focus styles */
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 3px solid rgba(122,164,196,0.95);
+  outline-offset: 2px;
+}
+
+/* Ensure interactive elements have a visible focus ring */
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  box-shadow: 0 0 0 3px rgba(122,164,196,0.12), 0 0 0 6px rgba(122,164,196,0.06) inset;
+}
+
+/* Screen-reader only helper */
+.sr-only {
+  position: absolute !important;
+  height: 1px;
+  width: 1px;
+  overflow: hidden;
+  clip: rect(1px, 1px, 1px, 1px);
+  white-space: nowrap;
+}
+
+/* Improved contrast for chat area */
+.chat-container {
+  background: linear-gradient(180deg, #071827 0%, #0b2a3a 100%);
+  color: #e6f7ff;
+}
+
+.chat-message-assistant {
+  background-color: rgba(255,255,255,0.04);
+  color: #e6f7ff;
+}
+
+.chat-message-user {
+  background-color: #eaf5ff;
+  color: #0d213a;
+}
+
+/* Make buttons more visible on hover/focus */
+button:hover {
+  filter: brightness(0.98);
+}
+
+/* Ensure table row focus for admin lists */
+tr:focus-within {
+  background: rgba(122,164,196,0.06);
 }

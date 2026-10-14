@@ -28,10 +28,10 @@ export default async function DashboardPage() {
             <div className="text-3xl font-black">Quenvaro</div>
           </div>
           <div className="flex items-center gap-3">
-            <Link href="/profile" className="rounded-full border border-[#d5dfe8] bg-white px-4 py-2 text-sm font-semibold">
+            <Link href="/profile" className="rounded-full border border-[#d5dfe8] bg-white px-4 py-2 text-sm font-semibold" aria-label="View profile">
               View profile
             </Link>
-            <Link href="/" className="rounded-full bg-[#1b2940] px-4 py-2 text-sm font-semibold text-white">
+            <Link href="/" className="rounded-full bg-[#1b2940] px-4 py-2 text-sm font-semibold text-white" aria-label="Return home">
               Home
             </Link>
           </div>
@@ -69,6 +69,7 @@ export default async function DashboardPage() {
                 <div>
                   <p className="text-xs uppercase tracking-[0.18em] text-[#b8d2e8]">AI assistant</p>
                   <h2 className="mt-2 text-2xl font-bold">Private finance chat</h2>
+                  <p className="mt-1 text-sm text-[#bcdff6]">Quick tips: Ask specific questions (amounts, time ranges) for better answers. Try follow-ups like "show me monthly trends".</p>
                 </div>
                 <div className="rounded-full bg-white/10 px-3 py-2 text-xs font-semibold text-[#dfeeff]">
                   Secure session
@@ -98,6 +99,7 @@ export default async function DashboardPage() {
                   <button
                     key={action}
                     className="flex w-full items-center justify-between rounded-2xl bg-[#f3f8fb] px-4 py-3 text-left text-sm font-medium text-[#233447]"
+                    aria-label={`Quick action: ${action}`}
                   >
                     <span>{action}</span>
                     <ArrowRight size={16} />
