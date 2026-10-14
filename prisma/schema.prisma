@@ -17,6 +17,7 @@ model User {
   updatedAt     DateTime  @updatedAt
   deletedAt     DateTime?
   messages      Message[]
+  usages         Usage[]
 }
 
 model Message {
@@ -34,4 +35,15 @@ model Audit {
   action    String
   details   String?
   createdAt DateTime @default(now())
+}
+
+model Usage {
+  id          String   @id @default(cuid())
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String
+  periodStart DateTime
+  requests    Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  @@index([userId, periodStart])
 }

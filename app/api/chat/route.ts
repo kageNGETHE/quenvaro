@@ -3,10 +3,14 @@ import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { redactPII } from "@/lib/redact";
+import { checkRateLimitSlidingWindow } from "@/lib/rateLimit";
 
 type Body = {
   content?: string;
 };
+
+// Limits
+const DAILY_LIMIT = Number(process.env.CHAT_DAILY_LIMIT || 200); // requests per user per day
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
@@ -21,7 +25,8 @@ export async function POST(request: Request) {
   }
 
   // ensure user exists and is not deleted
-  const user = await prisma.user.findUnique({ where: { email: session.user.email.toString().toLowerCase() } });
+  const email = session.user.email.toString().toLowerCase();
+  const user = await prisma.user.findUnique({ where: { email } });
   if (!user) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
@@ -29,7 +34,26 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Account scheduled for deletion" }, { status: 403 });
   }
 
+  // In-memory sliding-window rate limiter (per-minute)
+  const rate = checkRateLimitSlidingWindow(user.id);
+  if (!rate.allowed) {
+    return NextResponse.json({ error: "Too many requests", retryAfterMs: rate.window }, { status: 429 });
+  }
+
   try {
+    // Daily persistent usage counter (server-side)
+    const now = new Date();
+    const periodStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0));
+
+    let usage = await prisma.usage.findFirst({ where: { userId: user.id, periodStart } });
+    if (!usage) {
+      usage = await prisma.usage.create({ data: { userId: user.id, periodStart, requests: 1 } });
+    } else if (usage.requests >= DAILY_LIMIT) {
+      return NextResponse.json({ error: "Daily request limit reached" }, { status: 429 });
+    } else {
+      await prisma.usage.update({ where: { id: usage.id }, data: { requests: { increment: 1 } } });
+    }
+
     // Redact PII before saving or forwarding
     const { text: sanitizedContent, types } = redactPII(content);
 
@@ -38,7 +62,7 @@ export async function POST(request: Request) {
       try {
         await prisma.audit.create({
           data: {
-            actor: session.user.email.toString().toLowerCase(),
+            actor: email,
             action: "REDACT_INPUT",
             details: JSON.stringify({ types, snippet: sanitizedContent.slice(0, 200) }),
           },
@@ -81,7 +105,7 @@ export async function POST(request: Request) {
         },
       });
 
-      return NextResponse.json({ reply: canned });
+      return NextResponse.json({ reply: canned, usage: { periodStart, requests: (usage?.requests ?? 1) } });
     }
 
     // call OpenAI Chat Completions
@@ -118,7 +142,7 @@ export async function POST(request: Request) {
       },
     });
 
-    return NextResponse.json({ reply: aiContent, assistantId: assistantMessage.id, userMessageId: userMessage.id });
+    return NextResponse.json({ reply: aiContent, assistantId: assistantMessage.id, userMessageId: userMessage.id, usage: { periodStart, requests: (usage?.requests ?? 1) } });
   } catch (error) {
     console.error("Chat handler error:", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
