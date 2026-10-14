@@ -3,17 +3,14 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth-options";
 import { ArrowRight, Bell, BrainCircuit, CalendarCheck2, CreditCard, TrendingUp } from "lucide-react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
+
+const ChatBox = dynamic(() => import("@/app/components/ChatBox"), { ssr: false });
 
 const cards = [
   { icon: CreditCard, label: "Spending overview", value: "$3,480", detail: "Across 12 categories" },
   { icon: TrendingUp, label: "Net cash flow", value: "$1,240", detail: "Up 18% this month" },
   { icon: CalendarCheck2, label: "Tax readiness", value: "78%", detail: "3 actions remaining" },
-];
-
-const messages = [
-  { role: "assistant", text: "You spent 28% more on food this month. Want me to suggest a tighter grocery budget?" },
-  { role: "user", text: "Yes, and also tell me if my tax deductions look healthy." },
-  { role: "assistant", text: "Your deduction trend is strong. Keep records for business mileage and home office costs." },
 ];
 
 export default async function DashboardPage() {
@@ -31,9 +28,9 @@ export default async function DashboardPage() {
             <div className="text-3xl font-black">Quenvaro</div>
           </div>
           <div className="flex items-center gap-3">
-            <button className="rounded-full border border-[#d5dfe8] bg-white px-4 py-2 text-sm font-semibold">
+            <Link href="/profile" className="rounded-full border border-[#d5dfe8] bg-white px-4 py-2 text-sm font-semibold">
               View profile
-            </button>
+            </Link>
             <Link href="/" className="rounded-full bg-[#1b2940] px-4 py-2 text-sm font-semibold text-white">
               Home
             </Link>
@@ -78,31 +75,9 @@ export default async function DashboardPage() {
                 </div>
               </div>
 
-              <div className="mt-6 space-y-4">
-                {messages.map((msg) => (
-                  <div
-                    key={msg.text}
-                    className={
-                      msg.role === "assistant"
-                        ? "max-w-[90%] rounded-2xl bg-white/10 p-4 text-sm text-[#ebf5ff]"
-                        : "ml-auto max-w-[80%] rounded-2xl bg-[#eaf5ff] p-4 text-sm text-[#1d2e42]"
-                    }
-                  >
-                    {msg.text}
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-6 flex items-center gap-3 rounded-2xl bg-white/5 p-3">
-                <input
-                  aria-label="Prompt"
-                  value="Ask about spending, taxes, or cash flow"
-                  readOnly
-                  className="w-full bg-transparent text-sm text-[#dfeeff] outline-none placeholder:text-[#b3c9df]"
-                />
-                <button className="rounded-full bg-[#9dcff7] px-4 py-2 text-sm font-semibold text-[#0d213a]">
-                  Send
-                </button>
+              <div className="mt-6">
+                {/* Client-side chat box */}
+                <ChatBox />
               </div>
             </div>
           </section>
